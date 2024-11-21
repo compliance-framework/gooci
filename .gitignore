@@ -1,0 +1,8 @@
+# Goreleaer directory
+dist/
+
+# Local building binary
+gooci
+
+# Goland / Jetbrains IDE
+.idea/
