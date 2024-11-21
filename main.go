@@ -14,6 +14,8 @@ func main() {
 
 	rootCmd.AddCommand(cmd.UploadReleaseCmd())
 	rootCmd.AddCommand(cmd.DownloadReleaseCmd())
+	rootCmd.AddCommand(cmd.LoginCmd())
+	rootCmd.AddCommand(cmd.LogoutCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
