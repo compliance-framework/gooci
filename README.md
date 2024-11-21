@@ -14,8 +14,12 @@ where it runs.
 
 ## Installation
 
-Installation is very rudimentary at this point as we are still building a stable version. 
+Using `go install`
+```shell
+go install github.com/compliance-framework/gooci@0.0.2
+```
 
+From source
 ```shell
 # Build from source
 git clone git@github.com:compliance-framework/goreleaser-oci.git
@@ -46,5 +50,4 @@ Flags:
   -h, --help   help for gooci
 
 Use "gooci [command] --help" for more information about a command.
-
 ```
