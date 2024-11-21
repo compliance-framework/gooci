@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/compliance-framework/goreleaser-oci/cmd"
+	"github.com/compliance-framework/gooci/cmd"
 	"github.com/spf13/cobra"
 	"log"
 )
