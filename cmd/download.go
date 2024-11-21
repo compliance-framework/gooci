@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/compliance-framework/goreleaser-oci/pkg/oci"
+	"github.com/compliance-framework/gooci/pkg/oci"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/spf13/cobra"
 	"log"

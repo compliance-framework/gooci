@@ -1,4 +1,4 @@
-module github.com/compliance-framework/goreleaser-oci
+module github.com/compliance-framework/gooci
 
 go 1.23.2
 
