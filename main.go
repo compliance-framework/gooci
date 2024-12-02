@@ -13,6 +13,7 @@ func main() {
 	}
 
 	rootCmd.AddCommand(cmd.UploadReleaseCmd())
+	rootCmd.AddCommand(cmd.UploadSingleCmd())
 	rootCmd.AddCommand(cmd.DownloadReleaseCmd())
 	rootCmd.AddCommand(cmd.LoginCmd())
 	rootCmd.AddCommand(cmd.LogoutCmd())
