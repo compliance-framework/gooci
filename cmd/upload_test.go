@@ -76,7 +76,7 @@ func Test_UploadCmd_ValidateArgs_Response(t *testing.T) {
 		if err != nil {
 			t.Errorf("uploadCmd.validateArgs() error = %v", err)
 		}
-		if config.directory != path.Join(workDir, validDirectory) {
+		if config.source != path.Join(workDir, validDirectory) {
 			t.Errorf("uploadCmd.validateArgs() config = %v", config)
 		}
 	})
