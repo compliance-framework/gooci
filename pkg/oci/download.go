@@ -4,13 +4,11 @@ import (
 	"archive/tar"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 )
 
 type Downloader struct {
@@ -30,14 +28,11 @@ func NewDownloader(source name.Tag, destination string) (Downloader, error) {
 // Download executes the download of the OCI artifact into memory, untars it and write it to a directory.
 // This will need to be updated at some point when we are working with OCI artifacts rather than images,
 // to take slightly different actions based on the artifact type we receive from the registry (image / binary / fs)
-func (dl *Downloader) Download() error {
+func (dl *Downloader) Download(option ...remote.Option) error {
 	opts := []remote.Option{
 		remote.WithAuthFromKeychain(authn.DefaultKeychain),
-		remote.WithPlatform(v1.Platform{
-			Architecture: runtime.GOARCH,
-			OS:           runtime.GOOS,
-		}),
 	}
+	opts = append(opts, option...)
 	img, err := remote.Image(dl.reference, opts...)
 	if err != nil {
 		return err

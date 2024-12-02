@@ -37,8 +37,8 @@ func UploadReleaseCmd() *cobra.Command {
 }
 
 type uploadConfig struct {
-	directory string
-	tag       name.Tag
+	source string
+	tag    name.Tag
 }
 
 type uploadRelease struct {
@@ -76,8 +76,8 @@ func (d *uploadRelease) validateArgs(args []string) (*uploadConfig, error) {
 	}
 
 	return &uploadConfig{
-		directory: archiveDir,
-		tag:       tag,
+		source: archiveDir,
+		tag:    tag,
 	}, nil
 }
 
@@ -87,7 +87,7 @@ func (d *uploadRelease) run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	data, err := metadata.New(config.directory)
+	data, err := metadata.New(config.source)
 	if err != nil {
 		return err
 	}
