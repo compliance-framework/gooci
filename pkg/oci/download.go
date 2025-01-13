@@ -112,6 +112,13 @@ func untarToDirectory(destination string, tarReader io.Reader) error {
 
 		// if it's a file create it
 		case tar.TypeReg:
+			targetDir := filepath.Dir(target)
+			if _, err := os.Stat(targetDir); os.IsNotExist(err) {
+				if err := os.MkdirAll(targetDir, 0755); err != nil {
+					return err
+				}
+			}
+
 			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
 				return err
