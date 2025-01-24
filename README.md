@@ -2,15 +2,15 @@
 
 In the compliance framework, we distribute plugins as OCI artifacts for use in the collection agent.
 
-In order to efficiently distribute the plugins for multiple operating systems and architectures, we took 
-a page from the Homebrew playbook, and decided to upload our binaries and files to OCI, so we could easily 
+In order to efficiently distribute the plugins for multiple operating systems and architectures, we took
+a page from the Homebrew playbook, and decided to upload our binaries and files to OCI, so we could easily
 version and distribute them for all sorts of runtimes.
 
 `gooci` is a CLI we use to take goreleaser builds and archives and upload them to an OCI registry.
 
-When the plugins are then used it's easy for us to just specify the OCI path 
+When the plugins are then used it's easy for us to just specify the OCI path
 `ghcr.io/compliance-framework/plugin-ubuntu-vulnerabilities:1.0.1`, and know it will work no matter
-where it runs. 
+where it runs.
 
 ## Installation
 
@@ -29,7 +29,7 @@ go build -o gooci main.go
 sudo cp gooci /usr/local/bin
 ```
 
-## Usage 
+## Usage
 
 ```shell
 $ gooci help
