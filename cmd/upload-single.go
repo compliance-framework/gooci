@@ -3,6 +3,11 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"log"
+	"os"
+	"path"
+	"time"
+
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -12,10 +17,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	v2 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
-	"log"
-	"os"
-	"path"
-	"time"
 )
 
 func UploadSingleCmd() *cobra.Command {
@@ -31,6 +32,13 @@ func UploadSingleCmd() *cobra.Command {
 			}
 		},
 	}
+
+	command.Flags().StringToStringVar(
+		&flagAnnotations,
+		"annotate",
+		map[string]string{},
+		"Additional annotations to be added to the OCI index in the format key=value. Can be specified multiple times.",
+	)
 
 	return command
 }
@@ -85,14 +93,16 @@ func (d *uploadSingleArtifact) run(cmd *cobra.Command, args []string) error {
 	// We'll use the filename as the image title for the moment
 	title := path.Base(config.source)
 
-	// We could add more annotations later based on flags or potentially a config file.
-	// Right now we push what we know.
-	index := mutate.Annotations(empty.Index, map[string]string{
+	defaultAnnotations := map[string]string{
 		"org.opencontainers.image.created":  time.Now().UTC().Format("2006-01-02T15:04:05Z"),
 		"org.opencontainers.image.title":    title,
 		"org.opencontainers.image.ref.name": config.tag.TagStr(),
 		"org.opencontainers.image.version":  config.tag.TagStr(),
-	}).(v1.ImageIndex)
+	}
+
+	mergedAnnotations := mergeAnnotations(defaultAnnotations, flagAnnotations)
+
+	index := mutate.Annotations(empty.Index, mergedAnnotations).(v1.ImageIndex)
 
 	layer, err := tarball.LayerFromFile(config.source)
 	if err != nil {
