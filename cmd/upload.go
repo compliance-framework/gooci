@@ -3,6 +3,11 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"log"
+	"os"
+	"path"
+	"time"
+
 	"github.com/compliance-framework/gooci/pkg/metadata"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -13,11 +18,9 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	v2 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
-	"log"
-	"os"
-	"path"
-	"time"
 )
+
+var flagAnnotations map[string]string
 
 func UploadReleaseCmd() *cobra.Command {
 	command := &cobra.Command{
@@ -33,6 +36,13 @@ func UploadReleaseCmd() *cobra.Command {
 		},
 	}
 
+	command.Flags().StringToStringVar(
+		&flagAnnotations,
+		"annotate",
+		map[string]string{},
+		"Additional annotations to be added to the OCI index in the format key=value. Can be specified multiple times.",
+	)
+
 	return command
 }
 
@@ -42,6 +52,18 @@ type uploadConfig struct {
 }
 
 type uploadRelease struct {
+}
+
+func mergeAnnotations(defaults, passed map[string]string) map[string]string {
+	merged := make(map[string]string, len(defaults)+len(passed))
+	for key, value := range defaults {
+		merged[key] = value
+	}
+	for key, value := range passed {
+		merged[key] = value
+	}
+
+	return merged
 }
 
 func (d *uploadRelease) validateArgs(args []string) (*uploadConfig, error) {
@@ -97,15 +119,17 @@ func (d *uploadRelease) run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// We could add more annotations later based on flags or potentially a config file.
-	// Right now we push what we know.
-	index := mutate.Annotations(empty.Index, map[string]string{
+	defaultAnnotations := map[string]string{
 		"org.opencontainers.image.created":     time.Now().UTC().Format("2006-01-02T15:04:05Z"),
 		"org.opencontainers.image.title":       data.Metadata.ProjectName,
 		"org.opencontainers.image.description": data.Metadata.Description,
 		"org.opencontainers.image.ref.name":    config.tag.TagStr(),
 		"org.opencontainers.image.version":     config.tag.TagStr(),
-	}).(v1.ImageIndex)
+	}
+
+	mergedAnnotations := mergeAnnotations(defaultAnnotations, flagAnnotations)
+
+	index := mutate.Annotations(empty.Index, mergedAnnotations).(v1.ImageIndex)
 
 	for _, archive := range *data.GetArchives() {
 
