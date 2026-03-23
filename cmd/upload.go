@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	"github.com/google/go-containerregistry/pkg/v1/types"
 	v2 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 )
@@ -139,7 +140,9 @@ func (d *uploadRelease) run(cmd *cobra.Command, args []string) error {
 		}
 
 		// Create an OCI image with the layer
-		img, err := mutate.Append(empty.Image, mutate.Addendum{
+		base := mutate.MediaType(empty.Image, types.OCIManifestSchema1)
+		base = mutate.ConfigMediaType(base, types.OCIConfigJSON)
+		img, err := mutate.Append(base, mutate.Addendum{
 			MediaType: v2.MediaTypeImageLayerGzip,
 			Annotations: map[string]string{
 				"org.opencontainers.image.ref.name": archive.Name,
