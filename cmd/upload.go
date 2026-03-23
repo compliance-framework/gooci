@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/compliance-framework/gooci/pkg/metadata"
-	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/compliance-framework/gooci/pkg/oci"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
@@ -160,7 +160,7 @@ func (d *uploadRelease) run(cmd *cobra.Command, args []string) error {
 		if err := remote.Write(
 			config.tag,
 			img,
-			remote.WithAuthFromKeychain(authn.DefaultKeychain),
+			remote.WithAuthFromKeychain(oci.ECRKeychain()),
 			remote.WithPlatform(*platformDesc.Platform),
 		); err != nil {
 			return err
@@ -172,7 +172,7 @@ func (d *uploadRelease) run(cmd *cobra.Command, args []string) error {
 		})
 	}
 
-	err = remote.WriteIndex(config.tag, index, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	err = remote.WriteIndex(config.tag, index, remote.WithAuthFromKeychain(oci.ECRKeychain()))
 	if err != nil {
 		return err
 	}
