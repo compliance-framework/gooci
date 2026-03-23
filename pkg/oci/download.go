@@ -7,8 +7,6 @@ import (
 	"path"
 	"path/filepath"
 
-	ecrlogin "github.com/awslabs/amazon-ecr-credential-helper/ecr-login"
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 )
@@ -31,12 +29,8 @@ func NewDownloader(source name.Tag, destination string) (Downloader, error) {
 // This will need to be updated at some point when we are working with OCI artifacts rather than images,
 // to take slightly different actions based on the artifact type we receive from the registry (image / binary / fs)
 func (dl *Downloader) Download(option ...remote.Option) error {
-	keychain := authn.NewMultiKeychain(
-		authn.NewKeychainFromHelper(ecrlogin.NewECRHelper()),
-		authn.DefaultKeychain,
-	)
 	opts := []remote.Option{
-		remote.WithAuthFromKeychain(keychain),
+		remote.WithAuthFromKeychain(ECRKeychain()),
 	}
 	opts = append(opts, option...)
 	img, err := remote.Image(dl.reference, opts...)
