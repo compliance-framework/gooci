@@ -8,6 +8,7 @@ import (
 	"path"
 	"time"
 
+	ecrlogin "github.com/awslabs/amazon-ecr-credential-helper/ecr-login"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -121,10 +122,14 @@ func (d *uploadSingleArtifact) run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	keychain := authn.NewMultiKeychain(
+		authn.NewKeychainFromHelper(ecrlogin.NewECRHelper()),
+		authn.DefaultKeychain,
+	)
 	if err := remote.Write(
 		config.tag,
 		img,
-		remote.WithAuthFromKeychain(authn.DefaultKeychain),
+		remote.WithAuthFromKeychain(keychain),
 	); err != nil {
 		return err
 	}
@@ -133,7 +138,7 @@ func (d *uploadSingleArtifact) run(cmd *cobra.Command, args []string) error {
 		Add: img,
 	})
 
-	err = remote.WriteIndex(config.tag, index, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	err = remote.WriteIndex(config.tag, index, remote.WithAuthFromKeychain(keychain))
 	if err != nil {
 		return err
 	}

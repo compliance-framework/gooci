@@ -8,6 +8,7 @@ import (
 	"path"
 	"time"
 
+	ecrlogin "github.com/awslabs/amazon-ecr-credential-helper/ecr-login"
 	"github.com/compliance-framework/gooci/pkg/metadata"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -157,10 +158,14 @@ func (d *uploadRelease) run(cmd *cobra.Command, args []string) error {
 			},
 		}
 
+		keychain := authn.NewMultiKeychain(
+			authn.NewKeychainFromHelper(ecrlogin.NewECRHelper()),
+			authn.DefaultKeychain,
+		)
 		if err := remote.Write(
 			config.tag,
 			img,
-			remote.WithAuthFromKeychain(authn.DefaultKeychain),
+			remote.WithAuthFromKeychain(keychain),
 			remote.WithPlatform(*platformDesc.Platform),
 		); err != nil {
 			return err
@@ -172,7 +177,11 @@ func (d *uploadRelease) run(cmd *cobra.Command, args []string) error {
 		})
 	}
 
-	err = remote.WriteIndex(config.tag, index, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	keychain := authn.NewMultiKeychain(
+		authn.NewKeychainFromHelper(ecrlogin.NewECRHelper()),
+		authn.DefaultKeychain,
+	)
+	err = remote.WriteIndex(config.tag, index, remote.WithAuthFromKeychain(keychain))
 	if err != nil {
 		return err
 	}
