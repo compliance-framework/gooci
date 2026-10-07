@@ -5,3 +5,9 @@ lisa-design:
 - Symlink targets resolve relative to the link's directory; hardlink targets resolve relative to the archive root (tar semantics).
 - Device, FIFO and unknown entry types are skipped (unchanged).
 - Not changed here (noted for follow-up): no size/entry-count limits on decompressed layers; regular files are opened without O_TRUNC, so overwriting a longer existing file leaves trailing bytes.
+
+lisa-selfreview:
+pass 1 (strict):
+- CORE-DUP-001 should-fix pkg/oci/download.go: absolute-path check (path.IsAbs || filepath.IsAbs || VolumeName) written twice (resolveInDestination and the symlink case). Fix: one isAbsolutePath helper.
+- CORE-STYLE-001 nit pkg/oci/download.go TypeLink: wrapped error reads "refusing to extract hardlink X: refusing to extract Y: ...". Fix: resolveInDestination returns the reason only; callers add the "refusing to extract" prefix.
+- Deferred (pre-existing, out of scope): file not closed when io.Copy fails; no O_TRUNC; no size/entry-count limits on layers.
