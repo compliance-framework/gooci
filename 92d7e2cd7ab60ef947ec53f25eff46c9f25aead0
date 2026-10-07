@@ -1,0 +1,8 @@
+lisa-addressed:
+---
+Comment (pkg/oci/download.go:97):
+Regression: with a relative destination of `.` or `./`, every entry is rejected. `filepath.Join(".", "plugin")` is `plugin`, which doesn't start with the prefix `./`, so you get: path "plugin" is outside the destination directory ".". gooci's CLI passes the user's directory straight to NewDownloader, so `gooci download <ref> .` would break. Fix: compare absolute paths (`filepath.Abs` on destination once, then on each target), or use `rel, err := filepath.Rel(dest, target)` and reject `rel == ".."` or `strings.HasPrefix(rel, ".."+string(filepath.Separator))` (and absolute rel). Add table tests for destinations `.`, `./`, `out`, `./out` and an absolute temp dir, each with a normal entry (must pass) and a `../x` entry (must be rejected).
+Replies:
+**lisa implementation guidance:** Fix: rewrite isInDestination in pkg/oci/download.go with filepath.Rel(destination, target) (Rel cleans both sides, so '.' and './' work): return false on error or an absolute rel, and on rel == ".." or a rel starting with ".."+separator. Do not reject names like '..foo'. The containment check stays lexical (no os.Root). Tests: a table over destinations '.', './', 'out', './out' and an absolute temp dir, run from a t.Chdir'd temp dir, each with a normal entry (must extract into the destination) and a '../x' entry (must fail and write nothing outside the destination).
+
+<!-- lisa-guidance-posted -->
