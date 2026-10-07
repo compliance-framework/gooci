@@ -1,0 +1,7 @@
+lisa-design:
+- Lexical containment check (filepath.Join + Clean + prefix with trailing separator) rather than os.Root: matches the requested fix, works on go 1.24 (os.Root lacks MkdirAll there). gooci never creates symlinks, so no extracted entry can redirect a later write; pre-existing symlinks placed in the destination by something else are out of scope.
+- Absolute entry names are rejected with an error, not re-rooted under the destination (previous behaviour silently re-rooted them). Goreleaser and `tar` archives use relative names, so legitimate artifacts are unaffected.
+- Symlink/hardlink entries are still NOT created (unchanged behaviour); in-destination links are skipped silently, escaping links make extraction fail. Rejecting rather than skipping flags a crafted archive instead of hiding it.
+- Symlink targets resolve relative to the link's directory; hardlink targets resolve relative to the archive root (tar semantics).
+- Device, FIFO and unknown entry types are skipped (unchanged).
+- Not changed here (noted for follow-up): no size/entry-count limits on decompressed layers; regular files are opened without O_TRUNC, so overwriting a longer existing file leaves trailing bytes.
