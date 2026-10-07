@@ -1,2 +1,5 @@
 lisa-addressed:
 - self-review pass 1: absolute-path check moved into isAbsolutePath (CORE-DUP-001); resolveInDestination returns the reason only and callers prefix "refusing to extract ..." so hardlink errors no longer repeat it.
+
+lisa-selfreview:
+pass 2: approve, no new findings. Deferred items from pass 1 remain deferred (pre-existing, out of scope).
