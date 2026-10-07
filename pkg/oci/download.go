@@ -76,16 +76,21 @@ func (dl *Downloader) Download(option ...remote.Option) error {
 // resolveInDestination joins name onto destination and returns the result, or an error when
 // name is absolute or the joined path falls outside destination.
 func resolveInDestination(destination, name string) (string, error) {
-	if path.IsAbs(name) || filepath.IsAbs(name) || filepath.VolumeName(name) != "" {
-		return "", fmt.Errorf("refusing to extract %q: absolute paths are not allowed", name)
+	if isAbsolutePath(name) {
+		return "", fmt.Errorf("absolute path %q is not allowed", name)
 	}
 
 	target := filepath.Join(destination, name)
 	if !isInDestination(destination, target) {
-		return "", fmt.Errorf("refusing to extract %q: path is outside the destination directory %q", name, destination)
+		return "", fmt.Errorf("path %q is outside the destination directory %q", name, destination)
 	}
 
 	return target, nil
+}
+
+// isAbsolutePath reports whether name is absolute as a tar name ("/x") or on this OS ("C:\x").
+func isAbsolutePath(name string) bool {
+	return path.IsAbs(name) || filepath.IsAbs(name) || filepath.VolumeName(name) != ""
 }
 
 // isInDestination reports whether the cleaned target is destination itself or inside it.
@@ -133,7 +138,7 @@ func untarToDirectory(destination string, tarReader io.Reader) error {
 		// the target location where the dir/file should be created
 		target, err := resolveInDestination(destination, header.Name)
 		if err != nil {
-			return err
+			return fmt.Errorf("refusing to extract %q: %w", header.Name, err)
 		}
 
 		// the following switch could also be done using fi.Mode(), not sure if there
@@ -181,7 +186,7 @@ func untarToDirectory(destination string, tarReader io.Reader) error {
 		// archive as unsafe, so it is rejected rather than silently skipped.
 		case tar.TypeSymlink:
 			// a symlink target is relative to the directory holding the link
-			if path.IsAbs(header.Linkname) || filepath.IsAbs(header.Linkname) || filepath.VolumeName(header.Linkname) != "" {
+			if isAbsolutePath(header.Linkname) {
 				return fmt.Errorf("refusing to extract symlink %q: absolute target %q is not allowed", header.Name, header.Linkname)
 			}
 			if !isInDestination(destination, filepath.Join(filepath.Dir(target), header.Linkname)) {
@@ -191,7 +196,7 @@ func untarToDirectory(destination string, tarReader io.Reader) error {
 		case tar.TypeLink:
 			// a hardlink target is relative to the root of the archive
 			if _, err := resolveInDestination(destination, header.Linkname); err != nil {
-				return fmt.Errorf("refusing to extract hardlink %q: %w", header.Name, err)
+				return fmt.Errorf("refusing to extract hardlink %q: target %w", header.Name, err)
 			}
 
 		// device files, FIFOs and any other entry types are skipped
