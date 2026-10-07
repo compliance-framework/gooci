@@ -3,3 +3,6 @@ lisa-addressed:
 
 lisa-selfreview:
 pass 2: approve, no new findings. Deferred items from pass 1 remain deferred (pre-existing, out of scope).
+
+lisa-design:
+- Containment is checked with filepath.Rel(destination, target) (reject an error, an absolute result, ".." and "../...") instead of a string prefix, so relative destinations such as "." and "./" work (review thread on PR #9). It stays a lexical check.
