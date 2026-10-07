@@ -93,20 +93,15 @@ func isAbsolutePath(name string) bool {
 	return path.IsAbs(name) || filepath.IsAbs(name) || filepath.VolumeName(name) != ""
 }
 
-// isInDestination reports whether the cleaned target is destination itself or inside it.
+// isInDestination reports whether target is destination itself or inside it. Both paths are
+// cleaned and compared lexically, so a relative destination such as "." or "./" works.
 func isInDestination(destination, target string) bool {
-	destination = filepath.Clean(destination)
-	target = filepath.Clean(target)
-	if target == destination {
-		return true
+	rel, err := filepath.Rel(destination, target)
+	if err != nil || filepath.IsAbs(rel) {
+		return false
 	}
 
-	prefix := destination
-	if !strings.HasSuffix(prefix, string(filepath.Separator)) {
-		prefix += string(filepath.Separator)
-	}
-
-	return strings.HasPrefix(target, prefix)
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
 // untarToDirectory extracts directories and regular files from tarReader into destination.

@@ -189,3 +189,62 @@ func TestUntarToDirectoryExtractsEntriesInsideDestination(t *testing.T) {
 		t.Errorf("files were written outside the destination: %v", outside)
 	}
 }
+
+func TestUntarToDirectoryRelativeAndAbsoluteDestinations(t *testing.T) {
+	tests := []struct {
+		name        string
+		destination func(cwd string) string
+		// dir is where the destination lives, relative to cwd
+		dir string
+	}{
+		{name: "dot", destination: func(string) string { return "." }, dir: "."},
+		{name: "dot slash", destination: func(string) string { return "./" }, dir: "."},
+		{name: "relative", destination: func(string) string { return "out" }, dir: "out"},
+		{name: "dot slash relative", destination: func(string) string { return "./out" }, dir: "out"},
+		{name: "absolute", destination: func(cwd string) string { return filepath.Join(cwd, "abs") }, dir: "abs"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name+"/normal entry", func(t *testing.T) {
+			cwd := filepath.Join(t.TempDir(), "work")
+			if err := os.MkdirAll(cwd, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			t.Chdir(cwd)
+
+			entries := []tarEntry{{name: "plugin", typeflag: tar.TypeReg, body: "binary"}}
+			if err := untarToDirectory(tt.destination(cwd), buildTar(t, entries)); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			got, err := os.ReadFile(filepath.Join(cwd, tt.dir, "plugin"))
+			if err != nil {
+				t.Fatalf("read plugin: %v", err)
+			}
+			if string(got) != "binary" {
+				t.Errorf("plugin = %q, want %q", got, "binary")
+			}
+		})
+
+		t.Run(tt.name+"/parent entry", func(t *testing.T) {
+			root := t.TempDir()
+			cwd := filepath.Join(root, "work")
+			if err := os.MkdirAll(cwd, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			t.Chdir(cwd)
+
+			dest := filepath.Join(cwd, tt.dir)
+			// where "../x" would land if it escaped the destination
+			escaped := filepath.Join(dest, "..", "x")
+
+			entries := []tarEntry{{name: "../x", typeflag: tar.TypeReg, body: "x"}}
+			if err := untarToDirectory(tt.destination(cwd), buildTar(t, entries)); err == nil {
+				t.Errorf("expected an error for %q, got nil", "../x")
+			}
+			if _, err := os.Lstat(escaped); !os.IsNotExist(err) {
+				t.Errorf("%s should not have been created (err=%v)", escaped, err)
+			}
+		})
+	}
+}
