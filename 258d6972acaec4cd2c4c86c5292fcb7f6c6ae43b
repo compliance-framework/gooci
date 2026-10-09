@@ -1,0 +1,6 @@
+lisa-design:
+- No preview.yml: the shared preview.yml (v1.3.2) supports only kinds image, go-plugin and policies, and mock-gooci has none. A go-lib caller would fail its kind check. Deviation from the T03 "every repo" line; reported.
+- cut-prerelease.yml is added (plan: every repo) even though mock-gooci lacks one; copied from mock-api (same v1.3.2 pin, secrets: inherit).
+- .gorelreaser.yml was never read (misspelled), so v0.0.x releases used goreleaser defaults: binary gooci; linux/darwin/windows x amd64/arm64/386; archives gooci_<ver>_<os>_<arch>.tar.gz. The rename activates the file, so its latent bugs are fixed: binary "plugin" -> "gooci" (archives would ship a binary named plugin), README.MD -> README.md (the glob fails on Linux and breaks the release), format -> formats (goreleaser check exit 2). goos (linux, darwin) and the uname-style name_template are kept as the file's author wrote them, so windows archives stop and names change; raised as an open question, no known consumer downloads the archives (workflows uses go install).
+- replace_existing_artifacts: true copied from mock-gooci (release-go-lib warns without it).
+- README gets a Releasing section adapted from mock-gooci, plus the rc/tag rules from the v1.3.0 security model.
