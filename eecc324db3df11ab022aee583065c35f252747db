@@ -1,0 +1,2 @@
+lisa-design:
+- Supersedes the earlier T03 design note on goos/name_template: per the coordinator, published releases must not change shape. .goreleaser.yaml now relies on goreleaser defaults (targets, archive name/format/files) so the archives match v0.0.7 exactly: 8 tar.gz (linux/darwin/windows x 386/amd64/arm64 minus darwin_386) + checksums, each holding gooci (gooci.exe on windows) and README.md. Only binary, CGO_ENABLED=0, before hooks (go mod tidy, a no-op go generate), changelog filters and release.{prerelease: auto, replace_existing_artifacts: true} are set.
