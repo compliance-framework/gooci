@@ -1,0 +1,5 @@
+lisa-design:
+- ci.yml mirrors mock-gooci's caller (same triggers incl. closed, permissions, secrets: inherit, v1.3.2 pin) minus release-checks, which T02 adds per the spec.
+- Header comment adapted: mock's "tracking @main until v1 is tagged" is stale since callers pin a release commit.
+- goreleaser.yml (old tag-push release) called test.yml via workflow_call; deleting test.yml would make it invalid, so its test job is dropped here instead of leaving main with a broken workflow between T01 and T03. T03 deletes goreleaser.yml.
+- Legacy ruleset "Main Approvers" requires check `test`, which no longer runs after this PR; a human removes that ruleset (not touched here).
