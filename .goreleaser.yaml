@@ -1,40 +1,21 @@
-# This is an example .goreleaser.yml file with some sensible defaults.
-# Make sure to check the documentation at https://goreleaser.com
-
-# The lines below are called `modelines`. See `:help modeline`
-# Feel free to remove those if you don't want/need to use them.
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
-# vim: set ts=2 sw=2 tw=0 fo=cnqoj
-
+#
+# Reproduces the release shape gooci has always shipped (v0.0.7 was built with goreleaser's
+# defaults, as this file was misspelled and never read): the default targets
+# (linux/darwin/windows x 386/amd64/arm64, minus darwin/386), default tar.gz archives named
+# gooci_<version>_<os>_<arch>.tar.gz holding the binary and README.md, and a checksums file.
+# Don't override goos, the archive name or format, or files without deciding to change that.
 version: 2
 
 before:
   hooks:
-    # You may remove this if you don't use go modules.
     - go mod tidy
-    # you may remove this if you don't need go generate
     - go generate ./...
 
 builds:
   - binary: gooci
     env:
       - CGO_ENABLED=0
-    goos:
-      - linux
-      - darwin
-
-archives:
-  - formats: [tar.gz]
-    # this name template makes the OS and Arch compatible with the results of `uname`.
-    files:
-      - README.md
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
 
 changelog:
   sort: asc
