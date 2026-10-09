@@ -1,0 +1,11 @@
+name: cut-prerelease
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cut:
+    uses: compliance-framework/workflows/.github/workflows/cut-prerelease.yml@ca987fae431ad10a65315b87ae87a5a579f817a9 # v1.3.2
+    permissions:
+      contents: read
+    secrets: inherit

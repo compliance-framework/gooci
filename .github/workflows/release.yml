@@ -1,0 +1,19 @@
+# Publishes a release (kind go-lib): goreleaser attaches the archives to the GitHub release
+# release-please (or cut-prerelease) created, via the shared compliance-framework/workflows
+# release-go-lib.yml.
+name: release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    uses: compliance-framework/workflows/.github/workflows/release-go-lib.yml@ca987fae431ad10a65315b87ae87a5a579f817a9 # v1.3.2
+    permissions:
+      contents: write
+      packages: write
+    secrets: inherit
