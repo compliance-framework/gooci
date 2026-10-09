@@ -6,16 +6,10 @@ on:
       - '*'
 
 jobs:
-  test:
-    permissions:
-      contents: read
-    uses: ./.github/workflows/test.yml
-
+  # test.yml is replaced by ci.yml (shared CI, which tests every push to main). This
+  # workflow is removed when the shared release workflow lands.
   release:
     runs-on: ubuntu-latest
-
-    needs:
-      - test
 
     permissions:
       contents: write
