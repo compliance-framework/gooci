@@ -16,7 +16,7 @@ before:
     - go generate ./...
 
 builds:
-  - binary: plugin
+  - binary: gooci
     env:
       - CGO_ENABLED=0
     goos:
@@ -24,10 +24,10 @@ builds:
       - darwin
 
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     # this name template makes the OS and Arch compatible with the results of `uname`.
     files:
-      - README.MD
+      - README.md
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
@@ -42,3 +42,10 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+
+# release-please creates the GitHub release; release-go-lib.yml then runs goreleaser to attach
+# the archives. prerelease: auto keeps a vX.Y.Z-rcN tag a pre-release (the workflow refuses
+# anything else); replace_existing_artifacts lets a re-run overwrite a partial upload.
+release:
+  prerelease: auto
+  replace_existing_artifacts: true
