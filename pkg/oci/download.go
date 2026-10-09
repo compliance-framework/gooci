@@ -2,10 +2,12 @@ package oci
 
 import (
 	"archive/tar"
+	"fmt"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
@@ -71,7 +73,43 @@ func (dl *Downloader) Download(option ...remote.Option) error {
 	return nil
 }
 
+// resolveInDestination joins name onto destination and returns the result, or an error when
+// name is absolute or the joined path falls outside destination.
+func resolveInDestination(destination, name string) (string, error) {
+	if isAbsolutePath(name) {
+		return "", fmt.Errorf("absolute path %q is not allowed", name)
+	}
+
+	target := filepath.Join(destination, name)
+	if !isInDestination(destination, target) {
+		return "", fmt.Errorf("path %q is outside the destination directory %q", name, destination)
+	}
+
+	return target, nil
+}
+
+// isAbsolutePath reports whether name is absolute as a tar name ("/x") or on this OS ("C:\x").
+func isAbsolutePath(name string) bool {
+	return path.IsAbs(name) || filepath.IsAbs(name) || filepath.VolumeName(name) != ""
+}
+
+// isInDestination reports whether target is destination itself or inside it. Both paths are
+// cleaned and compared lexically, so a relative destination such as "." or "./" works.
+func isInDestination(destination, target string) bool {
+	rel, err := filepath.Rel(destination, target)
+	if err != nil || filepath.IsAbs(rel) {
+		return false
+	}
+
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+// untarToDirectory extracts directories and regular files from tarReader into destination.
+// Every entry must stay inside destination: absolute names, names that escape it, and
+// symlinks or hardlinks whose targets escape it are rejected with an error. Links that stay
+// inside destination, device files and FIFOs are not created.
 func untarToDirectory(destination string, tarReader io.Reader) error {
+	destination = filepath.Clean(destination)
 	tr := tar.NewReader(tarReader)
 
 	for {
@@ -93,7 +131,10 @@ func untarToDirectory(destination string, tarReader io.Reader) error {
 		}
 
 		// the target location where the dir/file should be created
-		target := filepath.Join(destination, header.Name)
+		target, err := resolveInDestination(destination, header.Name)
+		if err != nil {
+			return fmt.Errorf("refusing to extract %q: %w", header.Name, err)
+		}
 
 		// the following switch could also be done using fi.Mode(), not sure if there
 		// a benefit of using one vs. the other.
@@ -135,6 +176,26 @@ func untarToDirectory(destination string, tarReader io.Reader) error {
 			if err != nil {
 				return err
 			}
+
+		// links are not created, but one whose target escapes the destination marks the
+		// archive as unsafe, so it is rejected rather than silently skipped.
+		case tar.TypeSymlink:
+			// a symlink target is relative to the directory holding the link
+			if isAbsolutePath(header.Linkname) {
+				return fmt.Errorf("refusing to extract symlink %q: absolute target %q is not allowed", header.Name, header.Linkname)
+			}
+			if !isInDestination(destination, filepath.Join(filepath.Dir(target), header.Linkname)) {
+				return fmt.Errorf("refusing to extract symlink %q: target %q is outside the destination directory %q", header.Name, header.Linkname, destination)
+			}
+
+		case tar.TypeLink:
+			// a hardlink target is relative to the root of the archive
+			if _, err := resolveInDestination(destination, header.Linkname); err != nil {
+				return fmt.Errorf("refusing to extract hardlink %q: target %w", header.Name, err)
+			}
+
+		// device files, FIFOs and any other entry types are skipped
+		default:
 		}
 	}
 }
