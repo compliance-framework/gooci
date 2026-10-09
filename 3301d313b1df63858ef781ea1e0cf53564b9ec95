@@ -1,0 +1,4 @@
+lisa-design:
+- release-please-config.json is mock-gooci's (the workflows release-please/defaults.json verbatim, so the shared drift check passes) plus "bootstrap-sha": "ed2fad5467c4d90d940017f14b8eb7978c06e8c1" (main at branch time, which is also the v0.0.7 tag commit).
+- Manifest seeded at 0.0.7: v0.0.7 exists as tag + GitHub release on ed2fad5, so release-please starts after it; bootstrap-sha only matters if that release isn't found.
+- release-please.yml and the release-checks job copy mock-gooci; only the stale "tracking @main until v1 is tagged" comment is dropped.
