@@ -1,0 +1,2 @@
+lisa-addressed:
+Merged origin/main (332d920: shared CI ci.yml with required check `ci / required`, release-please, release/cut-prerelease workflows; test.yml and goreleaser.yml removed) into the PR branch with a merge commit so the PR's own commits keep their SHAs. No conflicts: the PR touches only pkg/oci Go code. Local gate on the merge: go build, go vet, go test ./..., gofmt -l (empty) and go mod tidy (no drift) all clean.
