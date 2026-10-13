@@ -1,6 +1,6 @@
 module github.com/compliance-framework/gooci
 
-go 1.24
+go 1.25.0
 
 require (
 	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.12.0
@@ -39,5 +39,5 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vbatts/tar-split v0.11.3 // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/sys v0.44.0 // indirect
 )
