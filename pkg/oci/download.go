@@ -16,8 +16,9 @@ import (
 type Downloader struct {
 	destination string
 
-	// Reference is the processed OCI Name of the Source
-	reference name.Tag
+	// Reference is the processed OCI Name of the Source. NewDownloader takes a tag; the
+	// package's tests also set a digest here, to pull published artifacts that cannot move.
+	reference name.Reference
 }
 
 func NewDownloader(source name.Tag, destination string) (Downloader, error) {

@@ -3,6 +3,7 @@ package oci
 import (
 	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"os"
 	"path/filepath"
 	"strings"
@@ -350,8 +351,9 @@ func TestArchiveRelativeName(t *testing.T) {
 	}
 }
 
-// Entries that are still rejected keep the error messages they had before leading "/" was
-// accepted.
+// Rejected entries keep the existing error messages. A name with a leading "/" that escapes
+// the destination ("/../x") is no longer absolute once the "/" is stripped, so it gets the
+// "outside the destination directory" message rather than "absolute path".
 func TestUntarToDirectoryRejectionMessages(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -388,5 +390,80 @@ func TestUntarToDirectoryRejectionMessages(t *testing.T) {
 				t.Errorf("error = %v, want it to contain %q", err, tt.want)
 			}
 		})
+	}
+}
+
+// extractedFiles returns every regular file under dest, keyed by its slash-separated path
+// relative to dest, with its mode. Anything else that is not a directory fails the test.
+func extractedFiles(t *testing.T, dest string) map[string]os.FileMode {
+	t.Helper()
+	files := map[string]os.FileMode{}
+	err := filepath.Walk(dest, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(dest, p)
+		if err != nil {
+			return err
+		}
+		switch {
+		case info.IsDir():
+		case info.Mode().IsRegular():
+			files[filepath.ToSlash(rel)] = info.Mode()
+		default:
+			t.Errorf("%s: unexpected file type %v", rel, info.Mode().Type())
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return files
+}
+
+// assertFileSet fails unless got holds exactly the paths in want.
+func assertFileSet(t *testing.T, got map[string]os.FileMode, want []string) {
+	t.Helper()
+	for _, rel := range want {
+		if _, ok := got[rel]; !ok {
+			t.Errorf("%s was not extracted", rel)
+		}
+	}
+	if len(got) != len(want) {
+		t.Errorf("extracted %d files %v, want exactly %v", len(got), got, want)
+	}
+}
+
+// TestUntarToDirectoryExtractsOPABuildFixture extracts testdata/opa-bundle.tar.gz, the
+// output of `opa build --bundle .` (OPA 1.14.1, the version release-policies.yml uses)
+// run in a directory holding data.json and policies/example.rego. Its entries are
+// "/data.json", "/policies/example.rego" and "/.manifest".
+func TestUntarToDirectoryExtractsOPABuildFixture(t *testing.T) {
+	root, dest := newDestination(t)
+
+	f, err := os.Open(filepath.Join("testdata", "opa-bundle.tar.gz"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	gz, err := gzip.NewReader(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := untarToDirectory(dest, gz); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	assertFileSet(t, extractedFiles(t, dest), []string{".manifest", "data.json", "policies/example.rego"})
+	got, err := os.ReadFile(filepath.Join(dest, "policies", "example.rego"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(string(got), "package compliance_framework.example") {
+		t.Errorf("policies/example.rego = %q, want the fixture's policy", got)
+	}
+	if outside := filesOutside(t, root, dest); len(outside) > 0 {
+		t.Errorf("files were written outside the destination: %v", outside)
 	}
 }
