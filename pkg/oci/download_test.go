@@ -104,8 +104,24 @@ func TestUntarToDirectoryRejectsEntriesOutsideDestination(t *testing.T) {
 			entries: []tarEntry{{name: "../../escaped-dir/", typeflag: tar.TypeDir}},
 		},
 		{
-			name:    "absolute path",
-			entries: []tarEntry{{name: "/escaped", typeflag: tar.TypeReg, body: "x"}},
+			name:    "leading slash then parent directory",
+			entries: []tarEntry{{name: "/../escaped", typeflag: tar.TypeReg, body: "x"}},
+		},
+		{
+			name:    "leading slashes then parent directories",
+			entries: []tarEntry{{name: "//../../escaped", typeflag: tar.TypeReg, body: "x"}},
+		},
+		{
+			name:    "leading slash dot then parent directory",
+			entries: []tarEntry{{name: "/./../escaped", typeflag: tar.TypeReg, body: "x"}},
+		},
+		{
+			name:    "leading slash nested parent directory",
+			entries: []tarEntry{{name: "/a/../../escaped", typeflag: tar.TypeReg, body: "x"}},
+		},
+		{
+			name:    "leading slash parent directory dir",
+			entries: []tarEntry{{name: "/../escaped-dir/", typeflag: tar.TypeDir}},
 		},
 		{
 			name:    "symlink to a parent directory",
@@ -120,8 +136,12 @@ func TestUntarToDirectoryRejectsEntriesOutsideDestination(t *testing.T) {
 			entries: []tarEntry{{name: "link", typeflag: tar.TypeLink, linkname: "../../outside"}},
 		},
 		{
-			name:    "hardlink to an absolute path",
-			entries: []tarEntry{{name: "link", typeflag: tar.TypeLink, linkname: "/etc/passwd"}},
+			name:    "symlink to an absolute path inside the destination",
+			entries: []tarEntry{{name: "link", typeflag: tar.TypeSymlink, linkname: "/data.json"}},
+		},
+		{
+			name:    "hardlink with a leading slash to a parent directory",
+			entries: []tarEntry{{name: "link", typeflag: tar.TypeLink, linkname: "/../outside"}},
 		},
 	}
 
@@ -244,6 +264,128 @@ func TestUntarToDirectoryRelativeAndAbsoluteDestinations(t *testing.T) {
 			}
 			if _, err := os.Lstat(escaped); !os.IsNotExist(err) {
 				t.Errorf("%s should not have been created (err=%v)", escaped, err)
+			}
+		})
+	}
+}
+
+// TestUntarToDirectoryExtractsOPABundle extracts entries named the way `opa build` writes
+// them: every name starts with "/", meaning the root of the archive.
+func TestUntarToDirectoryExtractsOPABundle(t *testing.T) {
+	root, dest := newDestination(t)
+
+	entries := []tarEntry{
+		{name: "/data.json", typeflag: tar.TypeReg, body: `{"a":1}`},
+		{name: "/policies/x.rego", typeflag: tar.TypeReg, body: "package x"},
+		{name: "/.manifest", typeflag: tar.TypeReg, body: `{"revision":""}`},
+		{name: "//double/slash.rego", typeflag: tar.TypeReg, body: "package double"},
+		{name: "/./dot/slash.rego", typeflag: tar.TypeReg, body: "package dot"},
+		{name: "/dir/", typeflag: tar.TypeDir},
+		// a hardlink target is archive-root relative too; links are still not created
+		{name: "/hardlink", typeflag: tar.TypeLink, linkname: "/data.json"},
+		{name: "/policies/symlink", typeflag: tar.TypeSymlink, linkname: "x.rego"},
+	}
+
+	if err := untarToDirectory(dest, buildTar(t, entries)); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	want := map[string]string{
+		"data.json":         `{"a":1}`,
+		"policies/x.rego":   "package x",
+		".manifest":         `{"revision":""}`,
+		"double/slash.rego": "package double",
+		"dot/slash.rego":    "package dot",
+	}
+	for rel, body := range want {
+		got, err := os.ReadFile(filepath.Join(dest, rel))
+		if err != nil {
+			t.Errorf("read %s: %v", rel, err)
+			continue
+		}
+		if string(got) != body {
+			t.Errorf("%s = %q, want %q", rel, got, body)
+		}
+	}
+
+	if info, err := os.Stat(filepath.Join(dest, "dir")); err != nil || !info.IsDir() {
+		t.Errorf("dir should have been created as a directory (err=%v)", err)
+	}
+	for _, rel := range []string{"hardlink", "policies/symlink"} {
+		if _, err := os.Lstat(filepath.Join(dest, rel)); !os.IsNotExist(err) {
+			t.Errorf("%s should not have been created (err=%v)", rel, err)
+		}
+	}
+
+	if outside := filesOutside(t, root, dest); len(outside) > 0 {
+		t.Errorf("files were written outside the destination: %v", outside)
+	}
+}
+
+func TestArchiveRelativeName(t *testing.T) {
+	tests := map[string]string{
+		"data.json":         "data.json",
+		"/data.json":        "data.json",
+		"///data.json":      "data.json",
+		"./data.json":       "data.json",
+		"/./data.json":      "data.json",
+		"././/data.json":    "data.json",
+		"/policies/x.rego":  "policies/x.rego",
+		"/a/./b//c":         "a/b/c",
+		"/":                 ".",
+		"./":                ".",
+		"":                  ".",
+		"/../x":             "../x",
+		"//../x":            "../x",
+		"/./../x":           "../x",
+		"a/../../x":         "../x",
+		"../x":              "../x",
+		"/a/../x":           "x",
+		"dir/./../../x/y/z": "../x/y/z",
+	}
+	for name, want := range tests {
+		if got := archiveRelativeName(name); got != want {
+			t.Errorf("archiveRelativeName(%q) = %q, want %q", name, got, want)
+		}
+	}
+}
+
+// Entries that are still rejected keep the error messages they had before leading "/" was
+// accepted.
+func TestUntarToDirectoryRejectionMessages(t *testing.T) {
+	tests := []struct {
+		name  string
+		entry tarEntry
+		want  string
+	}{
+		{
+			name:  "leading slash then parent directory",
+			entry: tarEntry{name: "/../x", typeflag: tar.TypeReg, body: "x"},
+			want:  `refusing to extract "/../x": path "/../x" is outside the destination directory`,
+		},
+		{
+			name:  "nested parent directory",
+			entry: tarEntry{name: "a/../../x", typeflag: tar.TypeReg, body: "x"},
+			want:  `refusing to extract "a/../../x": path "a/../../x" is outside the destination directory`,
+		},
+		{
+			name:  "absolute symlink target",
+			entry: tarEntry{name: "link", typeflag: tar.TypeSymlink, linkname: "/etc/passwd"},
+			want:  `refusing to extract symlink "link": absolute target "/etc/passwd" is not allowed`,
+		},
+		{
+			name:  "hardlink with a leading slash to a parent directory",
+			entry: tarEntry{name: "link", typeflag: tar.TypeLink, linkname: "/../x"},
+			want:  `refusing to extract hardlink "link": target path "/../x" is outside the destination directory`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, dest := newDestination(t)
+			err := untarToDirectory(dest, buildTar(t, []tarEntry{tt.entry}))
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Errorf("error = %v, want it to contain %q", err, tt.want)
 			}
 		})
 	}
