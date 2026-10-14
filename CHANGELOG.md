@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.10](https://github.com/compliance-framework/gooci/compare/v0.0.9...v0.0.10) (2026-10-14)
+
+
+### Bug Fixes
+
+* **oci:** extract entries with a leading slash inside the destination ([#21](https://github.com/compliance-framework/gooci/issues/21)) ([1669837](https://github.com/compliance-framework/gooci/commit/16698372eb25ca6b8d915b083484df83fd27b5cb))
+
 ## [0.0.9](https://github.com/compliance-framework/gooci/compare/v0.0.8...v0.0.9) (2026-10-13)
 
 
