@@ -3,3 +3,6 @@ Leading "/" and "./" in tar entry names and hardlink targets are archive-root re
 Symlink targets are deliberately NOT normalised: an absolute symlink target is resolved from the real filesystem root when followed, so it stays rejected.
 A hardlink to "/etc/passwd" is now accepted as archive-root "etc/passwd"; links are never created, so this only removes a false rejection.
 Volume names ("C:\x") stay rejected via isAbsolutePath on the normalised name. Error messages for still-rejected cases are unchanged and quote the original entry name.
+
+lisa-selfreview:
+Pass 1 (ccf-review core+go rules): no findings. Verified go vet, go test -race, gofmt -l, GOOS=windows go vet; a real `opa build` bundle (opa 1.13.2) fails on main with `absolute path "/data.json" is not allowed` and extracts on this branch.
