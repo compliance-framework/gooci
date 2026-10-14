@@ -1,0 +1,4 @@
+lisa-design:
+Downloader.reference is now name.Reference (unexported field; NewDownloader still takes name.Tag) so TestDownloadPublishedArtifacts can run the real Download() against digest-pinned refs.
+testdata/opa-bundle.tar.gz: built with OPA 1.14.1 compiled offline from the Go module cache (open-policy-agent/opa@v1.14.1, the version the agent pins and release-policies.yml defaults to): `opa build --bundle . -o opa-bundle.tar.gz` run in a dir with data.json and policies/example.rego. Entries: /data.json, /policies/example.rego, /.manifest.
+Network test pins plugin-file-attestation v0.2.0 index sha256:63d51a91... and plugin-file-attestation-policies v0.2.0 index sha256:ccf904e3...; skipped by -short or GOOCI_SKIP_NETWORK_TESTS=1; pulls anonymously (DOCKER_CONFIG=empty temp dir).
