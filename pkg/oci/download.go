@@ -16,8 +16,9 @@ import (
 type Downloader struct {
 	destination string
 
-	// Reference is the processed OCI Name of the Source
-	reference name.Tag
+	// Reference is the processed OCI Name of the Source. NewDownloader takes a tag; the
+	// package's tests also set a digest here, to pull published artifacts that cannot move.
+	reference name.Reference
 }
 
 func NewDownloader(source name.Tag, destination string) (Downloader, error) {
@@ -73,19 +74,39 @@ func (dl *Downloader) Download(option ...remote.Option) error {
 	return nil
 }
 
-// resolveInDestination joins name onto destination and returns the result, or an error when
-// name is absolute or the joined path falls outside destination.
+// resolveInDestination joins name, a tar entry name or hardlink target, onto destination and
+// returns the result. The name is first made relative to the archive root (see
+// archiveRelativeName), so "/data.json" lands at destination/data.json. It returns an error
+// when the name is still absolute afterwards (a volume name such as "C:\x") or the joined path
+// falls outside destination.
 func resolveInDestination(destination, name string) (string, error) {
-	if isAbsolutePath(name) {
+	rel := archiveRelativeName(name)
+	if isAbsolutePath(rel) {
 		return "", fmt.Errorf("absolute path %q is not allowed", name)
 	}
 
-	target := filepath.Join(destination, name)
+	target := filepath.Join(destination, rel)
 	if !isInDestination(destination, target) {
 		return "", fmt.Errorf("path %q is outside the destination directory %q", name, destination)
 	}
 
 	return target, nil
+}
+
+// archiveRelativeName strips every leading "/" and "./" from a tar entry name and cleans the
+// rest, the way GNU tar removes leading "/" from member names. `opa build` writes every bundle
+// entry with a leading "/" ("/data.json", "/.manifest"), meaning the root of the archive.
+// Stripping happens before cleaning, so "/../x" becomes "../x" (still rejected as outside the
+// destination) rather than "/x". A name that is only slashes and dots becomes ".".
+func archiveRelativeName(name string) string {
+	for {
+		trimmed := strings.TrimPrefix(strings.TrimLeft(name, "/"), "./")
+		if trimmed == name {
+			break
+		}
+		name = trimmed
+	}
+	return path.Clean(name)
 }
 
 // isAbsolutePath reports whether name is absolute as a tar name ("/x") or on this OS ("C:\x").
@@ -105,9 +126,11 @@ func isInDestination(destination, target string) bool {
 }
 
 // untarToDirectory extracts directories and regular files from tarReader into destination.
-// Every entry must stay inside destination: absolute names, names that escape it, and
-// symlinks or hardlinks whose targets escape it are rejected with an error. Links that stay
-// inside destination, device files and FIFOs are not created.
+// Entry names and hardlink targets with a leading "/" are relative to the archive root, so
+// they are extracted inside destination. Every entry must stay inside destination: names with
+// a volume ("C:\x"), names that escape it, absolute symlink targets, and symlinks or
+// hardlinks whose targets escape it are rejected with an error. Links that stay inside
+// destination, device files and FIFOs are not created.
 func untarToDirectory(destination string, tarReader io.Reader) error {
 	destination = filepath.Clean(destination)
 	tr := tar.NewReader(tarReader)
@@ -180,7 +203,10 @@ func untarToDirectory(destination string, tarReader io.Reader) error {
 		// links are not created, but one whose target escapes the destination marks the
 		// archive as unsafe, so it is rejected rather than silently skipped.
 		case tar.TypeSymlink:
-			// a symlink target is relative to the directory holding the link
+			// a symlink target is relative to the directory holding the link. Unlike entry
+			// names, an absolute target is not made relative: the filesystem resolves it from
+			// the real root when the link is followed, so a link to "/etc/passwd" points at
+			// that file, outside destination.
 			if isAbsolutePath(header.Linkname) {
 				return fmt.Errorf("refusing to extract symlink %q: absolute target %q is not allowed", header.Name, header.Linkname)
 			}
@@ -189,7 +215,8 @@ func untarToDirectory(destination string, tarReader io.Reader) error {
 			}
 
 		case tar.TypeLink:
-			// a hardlink target is relative to the root of the archive
+			// a hardlink target names another entry of the archive, so it is made relative
+			// to the archive root like an entry name
 			if _, err := resolveInDestination(destination, header.Linkname); err != nil {
 				return fmt.Errorf("refusing to extract hardlink %q: target %w", header.Name, err)
 			}
