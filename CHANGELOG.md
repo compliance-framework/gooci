@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.9](https://github.com/compliance-framework/gooci/compare/v0.0.8...v0.0.9) (2026-10-13)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/klauspost/compress to v1.18.7 [security] ([#16](https://github.com/compliance-framework/gooci/issues/16)) ([693f9be](https://github.com/compliance-framework/gooci/commit/693f9be88be9a9e77965be26d2383809bda13d08))
+* **deps:** update module golang.org/x/sys to v0.44.0 [security] ([#17](https://github.com/compliance-framework/gooci/issues/17)) ([358af87](https://github.com/compliance-framework/gooci/commit/358af8768ff4301ad635a18ce398f0fadc2e0300))
+
 ## [0.0.8](https://github.com/compliance-framework/gooci/compare/v0.0.7...v0.0.8) (2026-10-09)
 
 
