@@ -1,0 +1,2 @@
+lisa-design:
+- toolchain go1.25.14 = newest stable 1.25 patch on go.dev, strictly above the go line (1.25.0), which stays as the minimum language version; it survives go mod tidy.
