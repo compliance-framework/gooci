@@ -1,2 +1,5 @@
 lisa-selfreview:
 pass 1 (single reviewer pass): approve, no findings. Checked: toolchain kept after tidy, build/vet/tests pass, no replace/go.work, setup-go go-version-file reads the line, golangci-lint version check is minor-only.
+
+lisa-design:
+- toolchain go1.26.10 (not the last 1.25 patch, go1.25.14): Go 1.25 is out of support since Go 1.27 and has 14 stdlib advisories fixed only in 1.26.9+. The go line stays 1.25.0 so consumers' minimum Go doesn't change (dependency toolchain lines don't apply to consumers).
