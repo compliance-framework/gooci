@@ -1,0 +1,2 @@
+lisa-addressed:
+- ccf-review follow-up: toolchain raised from go1.25.14 to go1.26.10 (1.25 EOL, unfixed stdlib CVEs); go line kept at 1.25.0.
