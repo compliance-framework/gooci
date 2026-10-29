@@ -2,7 +2,7 @@ module github.com/compliance-framework/gooci
 
 go 1.25.0
 
-toolchain go1.26.10
+toolchain go1.27.3
 
 require (
 	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.12.0
