@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.11](https://github.com/compliance-framework/gooci/compare/v0.0.10...v0.0.11) (2026-10-29)
+
+
+### Bug Fixes
+
+* **deps:** build with the supported go1.26.10 toolchain so Renovate can ship Go security fixes ([#25](https://github.com/compliance-framework/gooci/issues/25)) ([c8b0e13](https://github.com/compliance-framework/gooci/commit/c8b0e137af8cff93a95d031e8bc464cf954167c5))
+
 ## [0.0.10](https://github.com/compliance-framework/gooci/compare/v0.0.9...v0.0.10) (2026-10-14)
 
 
