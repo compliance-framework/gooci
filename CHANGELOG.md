@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.12](https://github.com/compliance-framework/gooci/compare/v0.0.11...v0.0.12) (2026-11-06)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/klauspost/compress to v1.20.2 [security] ([#29](https://github.com/compliance-framework/gooci/issues/29)) ([66b2b8b](https://github.com/compliance-framework/gooci/commit/66b2b8bbfba49d83a3b17476fa4d558006d97e38))
+
 ## [0.0.11](https://github.com/compliance-framework/gooci/compare/v0.0.10...v0.0.11) (2026-10-29)
 
 
