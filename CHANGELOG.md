@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.12](https://github.com/compliance-framework/gooci/compare/v0.0.11...v0.0.12) (2026-11-24)
+
+
+### Bug Fixes
+
+* **deps:** update go toolchain directive to v1.27.4 [security] ([#31](https://github.com/compliance-framework/gooci/issues/31)) ([91b8e45](https://github.com/compliance-framework/gooci/commit/91b8e45ac15a64d729c5bf683e71bf00617de478))
+* **deps:** update module github.com/awslabs/amazon-ecr-credential-helper/ecr-login to v0.13.0 ([#32](https://github.com/compliance-framework/gooci/issues/32)) ([5aff498](https://github.com/compliance-framework/gooci/commit/5aff498695a5b2bf721059caf18dec247b05978f))
+* **deps:** update module github.com/klauspost/compress to v1.20.2 [security] ([#29](https://github.com/compliance-framework/gooci/issues/29)) ([66b2b8b](https://github.com/compliance-framework/gooci/commit/66b2b8bbfba49d83a3b17476fa4d558006d97e38))
+
 ## [0.0.11](https://github.com/compliance-framework/gooci/compare/v0.0.10...v0.0.11) (2026-10-29)
 
 
